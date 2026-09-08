@@ -2,79 +2,46 @@ name: Epic Games Free Games
 
 on:
   schedule:
-    # Jeudi 15h UTC
-    # → 17h en France pendant l'heure d'été
+    # Été : 17h02 en France = 15h02 UTC
     - cron: "2 15 * * 4"
 
-    # Jeudi 16h UTC
-    # → 17h en France pendant l'heure d'hiver
+    # Hiver : 17h02 en France = 16h02 UTC
     - cron: "2 16 * * 4"
 
-  # Permet de lancer le workflow manuellement
   workflow_dispatch:
 
-# Autorise GitHub Actions à modifier le dépôt
 permissions:
   contents: write
 
 jobs:
   check-free-games:
-
     runs-on: ubuntu-latest
 
     steps:
-
-      # ========================================================
-      # Récupération du projet
-      # ========================================================
-
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
-
-      # ========================================================
-      # Installation de Python
-      # ========================================================
 
       - name: Installer Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # ========================================================
-      # Installation des dépendances
-      # ========================================================
-
       - name: Installer les dépendances
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      # ========================================================
-      # Exécution du programme
-      # ========================================================
 
       - name: Lancer le programme
         env:
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-
-        run: |
-          python main.py
-
-      # ========================================================
-      # Sauvegarde de seen_games.json
-      # ========================================================
+        run: python main.py
 
       - name: Sauvegarder l'historique
         run: |
-
           git config user.name "github-actions[bot]"
-
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add seen_games.json
-
           git diff --cached --quiet || git commit -m "Update seen games"
-
           git push
