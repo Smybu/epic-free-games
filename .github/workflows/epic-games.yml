@@ -2,12 +2,20 @@ name: Epic Games Free Games
 
 on:
   schedule:
-    # Jeudi à 15h00 UTC
-    # = 17h00 en France pendant l'heure d'été
-    - cron: "0 15 * * 4"
+    # Jeudi 15h UTC
+    # → 17h en France pendant l'heure d'été
+    - cron: "2 15 * * 4"
+
+    # Jeudi 16h UTC
+    # → 17h en France pendant l'heure d'hiver
+    - cron: "2 16 * * 4"
 
   # Permet de lancer le workflow manuellement
   workflow_dispatch:
+
+# Autorise GitHub Actions à modifier le dépôt
+permissions:
+  contents: write
 
 jobs:
   check-free-games:
@@ -63,12 +71,10 @@ jobs:
 
           git config user.name "github-actions[bot]"
 
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add seen_games.json
 
-          git diff --cached --quiet || \
-            git commit -m "Update seen games"
+          git diff --cached --quiet || git commit -m "Update seen games"
 
           git push

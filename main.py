@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import json
 import os
 import smtplib
@@ -25,6 +26,38 @@ EPIC_API_URL = (
     "https://store-site-backend-static-ipv4.ak.epicgames.com"
     "/freeGamesPromotions"
 )
+
+
+# ============================================================
+# Vérification de l'heure française
+# ============================================================
+
+def is_thursday_17h():
+    """
+    Vérifie que nous sommes jeudi à 17h00
+    selon l'heure française Europe/Paris.
+
+    ZoneInfo gère automatiquement :
+    - heure d'été
+    - heure d'hiver
+    """
+
+    now = datetime.now(ZoneInfo("Europe/Paris"))
+
+    return (
+        now.weekday() == 3
+        and now.hour == 17
+    )
+
+
+def get_french_time():
+    """
+    Retourne l'heure actuelle en France.
+    """
+
+    return datetime.now(
+        ZoneInfo("Europe/Paris")
+    )
 
 
 # ============================================================
@@ -62,6 +95,7 @@ def get_free_games():
     print(f"📦 {len(elements)} offres récupérées.")
 
     for game in elements:
+
         title = game.get("title")
 
         if not title:
@@ -82,12 +116,14 @@ def get_free_games():
             continue
 
         for promotion in active_promotions:
+
             offers = promotion.get(
                 "promotionalOffers",
                 []
             )
 
             for offer in offers:
+
                 start_date = offer.get("startDate")
                 end_date = offer.get("endDate")
 
@@ -125,18 +161,21 @@ def get_free_games():
                 )
 
                 if page_slug:
+
                     game_url = (
                         "https://store.epicgames.com/fr/p/"
                         + page_slug
                     )
 
                 elif game.get("productSlug"):
+
                     game_url = (
                         "https://store.epicgames.com/fr/p/"
                         + game["productSlug"]
                     )
 
                 else:
+
                     game_url = (
                         "https://store.epicgames.com/fr/free-games"
                     )
@@ -162,7 +201,12 @@ def get_free_games():
     unique_games = {}
 
     for game in games:
-        game_id = game["id"] or game["title"]
+
+        game_id = (
+            game["id"]
+            or game["title"]
+        )
+
         unique_games[game_id] = game
 
     return list(unique_games.values())
@@ -173,30 +217,36 @@ def get_free_games():
 # ============================================================
 
 def load_seen_games():
+
     if not os.path.exists(SEEN_FILE):
         return set()
 
     try:
+
         with open(
             SEEN_FILE,
             "r",
             encoding="utf-8",
         ) as file:
+
             return set(json.load(file))
 
     except (
         json.JSONDecodeError,
         OSError,
     ):
+
         return set()
 
 
 def save_seen_games(seen_games):
+
     with open(
         SEEN_FILE,
         "w",
         encoding="utf-8",
     ) as file:
+
         json.dump(
             sorted(seen_games),
             file,
@@ -216,6 +266,7 @@ def send_email(games):
         or not EMAIL_TO
         or not EMAIL_PASSWORD
     ):
+
         raise RuntimeError(
             "Variables EMAIL_FROM, EMAIL_TO ou "
             "EMAIL_PASSWORD manquantes."
@@ -229,6 +280,7 @@ def send_email(games):
 
         html_body = """
         <html>
+
         <body style="
             font-family: Arial, sans-serif;
             color: #222;
@@ -249,6 +301,7 @@ def send_email(games):
             </p>
 
         </body>
+
         </html>
         """
 
@@ -424,7 +477,6 @@ def send_email(games):
     message["To"] = EMAIL_TO
     message["Subject"] = subject
 
-    # Version texte
     message.attach(
         MIMEText(
             text_body,
@@ -433,7 +485,6 @@ def send_email(games):
         )
     )
 
-    # Version HTML
     message.attach(
         MIMEText(
             html_body,
@@ -471,9 +522,38 @@ def send_email(games):
 
 def main():
 
+    french_time = get_french_time()
+
     print("=" * 60)
     print("🎮 EPIC GAMES - FREE GAMES")
     print("=" * 60)
+
+    print(
+        f"🇫🇷 Heure française : "
+        f"{french_time.strftime('%d/%m/%Y %H:%M:%S')}"
+    )
+
+    # ============================================================
+    # Sécurité : uniquement jeudi à 17h
+    # ============================================================
+
+    if not is_thursday_17h():
+
+        print(
+            "⏭️ Ce n'est pas jeudi à 17h. "
+            "Le programme s'arrête."
+        )
+
+        return
+
+    print(
+        "🕔 Jeudi 17h détecté. "
+        "Lancement de la recherche."
+    )
+
+    # ============================================================
+    # Recherche
+    # ============================================================
 
     print()
     print("🔎 Recherche des jeux gratuits Epic Games...")
@@ -486,7 +566,7 @@ def main():
     )
 
     # ============================================================
-    # Affichage des jeux trouvés
+    # Affichage
     # ============================================================
 
     if games:
@@ -541,6 +621,7 @@ def main():
         print()
 
         for game in new_games:
+
             print(
                 f"  - {game['title']}"
             )
@@ -559,9 +640,6 @@ def main():
 
     # ============================================================
     # Sauvegarde de l'historique
-    #
-    # IMPORTANT :
-    # On sauvegarde uniquement APRÈS l'envoi réussi.
     # ============================================================
 
     for game in new_games:
