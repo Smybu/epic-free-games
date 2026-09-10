@@ -2,11 +2,8 @@ name: Epic Games Free Games
 
 on:
   schedule:
-    # Été : 17h02 en France = 15h02 UTC
-    - cron: "2 15 * * 4"
-
-    # Hiver : 17h02 en France = 16h02 UTC
-    - cron: "2 16 * * 4"
+    - cron: "2 17 * * 4"
+      timezone: "Europe/Paris"
 
   workflow_dispatch:
 
