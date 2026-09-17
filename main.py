@@ -46,7 +46,7 @@ def is_thursday_17h():
 
     return (
         now.weekday() == 3
-        and now.hour == 17
+        and now.hour >= 17
     )
 
 
